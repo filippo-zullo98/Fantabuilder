@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>🔍 Consigli</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { background: #16213e; padding: 20px; border-radius: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .filtri { background: #16213e; padding: 20px; border-radius: 12px; margin-bottom: 30px; }
+        .filtri form { display: flex; flex-wrap: wrap; gap: 15px; align-items: end; }
+        .filtri label { display: block; font-size: 0.9em; color: #aaa; }
+        .filtri select, .filtri input { padding: 10px; border-radius: 8px; border: 1px solid #0f3460; background: #0a0a1a; color: #eee; }
+        .filtri button { padding: 10px 30px; background: #e94560; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; }
+        .filtri select[name="budget"] { padding: 10px 20px; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.2); background: #0a0a1a; color: #eee; font-size: 1em; min-width:150px; cursor:pointer; appearance: auto; }
+        .filtri select[name="budget"]:hover {border-color: #e94560;}
+        .filtri select[name="budget"] option {background: #1a1a2e; color: #eee; padding: 10px;}
+        table { width: 100%; border-collapse: collapse; background: #16213e; border-radius: 12px; overflow: hidden; }
+        th { background: #0f3460; padding: 15px; text-align: left; }
+        td { padding: 12px 15px; border-bottom: 1px solid #0f3460; }
+        .ruolo-badge { display: inline-block; padding: 2px 12px; border-radius: 20px; font-weight: bold; }
+        .ruolo-P { background: #2d6a4f; } .ruolo-D { background: #1e6091; } .ruolo-C { background: #7b2d8b; } .ruolo-A { background: #e94560; }
+        .btn-acquista { background: #2d6a4f; border: none; color: white; padding: 5px 15px; border-radius: 5px; cursor: pointer; }
+        .acquistato { background: #2d1b2e; color: #888; }
+        .back { display: inline-block; color: #fff; text-decoration: none; padding: 10px 25px; border-radius: 30px; background: linear-gradient(135deg, #e94560, #c73652); font-weight: bold; transition: all 0.3s ease; box-shadow: 0 4px 15px rgba(233, 69, 96, 0.3); }
+        .back:hover { transform: translateY(-2px); box-shadow: 0 6px 25px rgba(233, 69, 96, 0.5); }
+        .back::before { content:"← ";}
+        .tag { display: inline-block; background: #0f3460; padding: 5px 15px; border-radius: 20px; margin: 3px; }
+        .tag .remove { color: #e94560; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Consigli</h1>
+            <a href="/" class="back"> Torna</a>
+        </header>
+        <div class="filtri">
+            <form method="POST">
+                <div><label>Ruolo</label>
+                    <select name="ruolo">
+                        <option value="tutti">Tutti</option>
+                        <option value="P">🧤 Portiere</option>
+                        <option value="D"> 🛡️ Difensore</option>
+                        <option value="C"> ⚽ Centrocampista</option>
+                        <option value="A"> 🎯 Attaccante</option>
+                    </select>
+                </div>
+                <div>   
+                    <label>Budget</label>
+                    <select name="budget"> 
+                        <option value="10">10 mln</option>
+                        <option value="20">20 mln</option>
+                        <option value="30">30 mln</option>
+                        <option value="40">40 mln</option>
+                        <option value="50">50 mln</option>
+                        <option value="60">60 mln</option>
+                        <option value="80">80 mln</option>
+                        <option value="100">100 mln</option>
+                        <option value="150">150 mln</option>
+                        <option value="200">200 mln</option>
+                        <option value="300">300 mln</option>
+                        <option value="400">400 mln</option>
+                        <option value="500">500 mln</option>
+                    </select>
+                </div>
+                <div><label>Top N</label>
+                    <input type="number" name="top_n" value="10" min="1" max="50">
+                </div>
+                <button type="submit">🔍 Cerca</button>
+            </form>
+        </div>
+        {% if acquistati %}
+        <div style="margin-bottom:20px;">
+            <strong>✅ Acquistati:</strong>
+            {% for nome in acquistati %}
+                <span class="tag">{{ nome }} <span class="remove" onclick="rimuovi('{{ nome }}')">✕</span></span>
+            {% endfor %}
+            <button onclick="resetLista()" style="background:#444;border:none;color:white;padding:3px 12px;border-radius:5px;cursor:pointer;">Reset</button>
+        </div>
+        {% endif %}
+        {% if suggerimenti %}
+        <table>
+            <tr><th>#</th><th>Giocatore</th><th>Ruolo</th><th>Squadra</th><th>Quot.</th><th>FM</th><th>G</th><th>A</th><th>Indice</th><th></th></tr>
+            {% for g in suggerimenti %}
+            <tr class="{% if g.nome in acquistati %}acquistato{% endif %}">
+                <td>{{ loop.index }}</td><td>{{ g.nome }}</td>
+                <td><span class="ruolo-badge ruolo-{{ g.ruolo }}">{{ g.ruolo }}</span></td>
+                <td>{{ g.squadra }}</td><td>{{ g.quotazione }}</td><td>{{ g.fantamedia }}</td><td>{{ g.gol }}</td><td>{{ g.assist }}</td>
+                <td>{{ g.indice }}</td>
+                <td>{% if g.nome not in acquistati %}<form method="POST" action="/acquista"><input type="hidden" name="nome" value="{{ g.nome }}"><button class="btn-acquista">✅</button></form>{% else %}✔️{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        {% else %}
+        <p style="text-align:center;padding:40px;color:#666;">Usa i filtri per ottenere consigli</p>
+        {% endif %}
+    </div>
+    <script>
+        function rimuovi(nome){ fetch('/rimuovi_acquistato',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'nome='+encodeURIComponent(nome)}).then(()=>location.reload()); }
+        function resetLista(){ if(confirm('Resettare?')){ fetch('/reset').then(()=>location.reload()); } }
+    </script>
+</body>
+</html>

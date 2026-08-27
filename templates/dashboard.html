@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Dashboard Asta</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #0d1b2a; 
+            color: #eee; 
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1400px; margin: 0 auto; }
+        
+        header { 
+            background: linear-gradient(135deg, #1b263b, #0d1b2a);
+            padding: 25px 30px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        header h1 { font-size: 2em; }
+        header h1 span { color: #e94560; }
+        .back { 
+            color: #e94560; 
+            text-decoration: none; 
+            font-weight: bold;
+            padding: 10px 20px;
+            border: 2px solid #e94560;
+            border-radius: 25px;
+            transition: all 0.3s;
+        }
+        .back:hover { background: #e94560; color: #fff; }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-card .numero {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .stat-card .label {
+            color: #aaa;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .stat-card .sottotitolo {
+            color: #666;
+            font-size: 0.8em;
+            margin-top: 5px;
+        }
+        .stat-card.fase {
+            border-color: #e94560;
+        }
+        .stat-card.fase .numero {
+            color: #e94560;
+            font-size: 1.8em;
+        }
+        
+        .acquisti-section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .acquisti-section h2 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        .acquisto-item {
+            display: inline-block;
+            background: rgba(255,255,255,0.08);
+            padding: 8px 18px;
+            border-radius: 20px;
+            margin: 5px;
+            font-size: 0.9em;
+        }
+        .acquisto-item .costo {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .acquisto-item .automatico {
+            color: #95d5b2;
+            font-size: 0.8em;
+            margin-left: 5px;
+        }
+        
+        .consigli-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+        }
+        @media (max-width: 900px) {
+            .consigli-grid { grid-template-columns: 1fr; }
+        }
+        
+        .consigli-list {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .consigli-list h2 {
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+        .consiglio-card {
+            background: rgba(255,255,255,0.05);
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            border-left: 4px solid #e94560;
+            transition: all 0.3s;
+        }
+        .consiglio-card:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateX(5px);
+        }
+        .consiglio-card .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .consiglio-card .nome {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .consiglio-card .dettagli {
+            color: #aaa;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        .consiglio-card .indice {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+        .consiglio-card .suggerimento {
+            color: #95d5b2;
+            font-size: 0.85em;
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: rgba(45, 106, 79, 0.2);
+            border-radius: 8px;
+        }
+        .btn-acquista {
+            background: #2d6a4f;
+            border: none;
+            color: white;
+            padding: 6px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s;
+        }
+        .btn-acquista:hover { transform: scale(1.05); }
+        
+        .analisi-side {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .analisi-side h2 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        .analisi-item {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .analisi-item:last-child { border: none; }
+        .analisi-item .etichetta {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+        .analisi-item .valore {
+            float: right;
+            font-weight: bold;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .progress-bar .fill {
+            height: 100%;
+            background: linear-gradient(90deg, #e94560, #ffd700);
+            border-radius: 10px;
+            transition: width 0.5s;
+        }
+        .btn-avanza {
+            width: 100%;
+            padding: 12px;
+            background: #e94560;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+        .btn-avanza:hover { background: #c73652; transform: scale(1.02); }
+        .btn-avanza:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        .badge-fase {
+            display: inline-block;
+            padding: 4px 16px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .badge-P { background: #2d6a4f; color: #95d5b2; }
+        .badge-D { background: #1e6091; color: #82c0f0; }
+        .badge-C { background: #7b2d8b; color: #d9a5e0; }
+        .badge-A { background: #c92a2a; color: #ffb3b3; }
+        
+        .flash-message {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .flash-success {
+            background: rgba(45, 106, 79, 0.2);
+            border-left: 4px solid #2d6a4f;
+            color: #95d5b2;
+        }
+        .flash-error {
+            background: rgba(239, 71, 111, 0.15);
+            border-left: 4px solid #ef476f;
+            color: #ffb3b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message|safe }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <header>
+            <h1>📊 <span>Dashboard</span> Asta</h1>
+            <div>
+                <a href="/" class="back">⬅️ Torna</a>
+                <a href="/reset_asta" class="back" style="margin-left:10px;" onclick="return confirm('Sei sicuro di voler resettare tutti gli acquisti?');">↺ Reset</a>
+            </div>
+        </header>
+
+        <!-- Statistiche -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="numero">{{ stats.budget_residuo }}</div>
+                <div class="label">💰 Budget residuo</div>
+                <div class="sottotitolo">Su {{ stats.budget_totale }}M</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">{{ stats.speso }}</div>
+                <div class="label">💸 Speso</div>
+                <div class="sottotitolo">{{ stats.percentuale_spesa }}% del totale</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">{{ stats.totale_acquisti }}</div>
+                <div class="label">✅ Acquisti effettuati</div>
+                <div class="sottotitolo">di cui {{ stats.portieri_automatici }} automatici</div>
+            </div>
+            <div class="stat-card fase">
+                <div class="numero">
+                    <span class="badge-fase badge-{{ stats.fase_corrente }}">
+                        {{ stats.fase_corrente }}
+                    </span>
+                </div>
+                <div class="label">📌 Fase corrente</div>
+                <div class="sottotitolo">{{ stats.fase_nome }}</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">🧤 {{ stats.limiti.P.attuali }}/{{ stats.limiti.P.limite }}</div>
+                <div class="label">Portieri</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">🛡️ {{ stats.limiti.D.attuali }}/{{ stats.limiti.D.limite }}</div>
+                <div class="label">Difensori</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">🎯 {{ stats.limiti.C.attuali }}/{{ stats.limiti.C.limite }}</div>
+                <div class="label">Centrocampisti</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">⚡ {{ stats.limiti.A.attuali }}/{{ stats.limiti.A.limite }}</div>
+                <div class="label">Attaccanti</div>
+            </div>
+        </div>
+
+        <!-- Acquisti effettuati -->
+        <div class="acquisti-section">
+            <h2>✅ Acquisti effettuati</h2>
+            {% for acquisto in acquisti %}
+                <span class="acquisto-item">
+                    {% if acquisto.ruolo == 'P' %}🧤
+                    {% elif acquisto.ruolo == 'D' %}🛡️
+                    {% elif acquisto.ruolo == 'C' %}🎯
+                    {% else %}⚡{% endif %}
+                    {{ acquisto.nome }}
+                    <span class="costo">{{ acquisto.costo }}M</span>
+                    {% if acquisto.automatico %}
+                        <span class="automatico">(automatico)</span>
+                    {% else %}
+                        <form method="POST" action="/rimuovi_acquistato" style="display:inline;">
+                            <input type="hidden" name="nome" value="{{ acquisto.nome }}">
+                            <input type="hidden" name="ruolo" value="{{ acquisto.ruolo }}">
+                            <input type="hidden" name="squadra" value="{{ acquisto.squadra }}">
+                            <button type="submit" style="background:#c92a2a;border:none;color:white;padding:2px 12px;border-radius:10px;cursor:pointer;font-size:0.7em;margin-left:5px;">✕</button>
+                        </form>
+                    {% endif %}
+                </span>
+            {% endfor %}
+        </div>
+
+        <!-- Consigli + Analisi -->
+        <div class="consigli-grid">
+            <!-- Consigli -->
+            <div class="consigli-list">
+                <h2>🎯 Consigli per la fase {{ stats.fase_nome }}</h2>
+                {% if consigli %}
+                    {% for c in consigli %}
+                    <div class="consiglio-card">
+                        <div class="top">
+                            <span class="nome">
+                                {% if c.ruolo == 'P' %}🧤
+                                {% elif c.ruolo == 'D' %}🛡️
+                                {% elif c.ruolo == 'C' %}🎯
+                                {% else %}⚡{% endif %}
+                                {{ c.nome }}
+                                <span style="color:#888;font-weight:normal;font-size:0.8em;">
+                                    ({{ c.squadra }})
+                                </span>
+                                <span style="color:#888;font-weight:normal;font-size:0.7em;">
+                                    Base: {{ c.quotazione }}M
+                                </span>
+                            </span>
+                            <span>
+                                <span class="indice">{{ c.indice }}</span>
+                                {% if stats.limiti[c.ruolo].rimanenti > 0 %}
+                                    <form method="POST" action="/acquista_asta" style="display:inline-flex;align-items:center;gap:5px;">
+                                        <input type="hidden" name="nome" value="{{ c.nome }}">
+                                        <input type="hidden" name="ruolo" value="{{ c.ruolo }}">
+                                        <input type="hidden" name="squadra" value="{{ c.squadra }}">
+                                        <input type="hidden" name="quotazione_base" value="{{ c.quotazione }}">
+                                        <input type="number" name="prezzo_pagato" value="{{ c.quotazione }}" step="0.5" min="0" 
+                                               style="width:70px;padding:4px 8px;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:#0a0a1a;color:#fff;font-size:0.8em;">
+                                        <button type="submit" class="btn-acquista">✅ Prendo</button>
+                                    </form>
+                                {% else %}
+                                    <span style="color:#ef476f;font-size:0.8em;background:rgba(239,71,111,0.2);padding:4px 12px;border-radius:15px;">
+                                        ❌ Ruolo completo
+                                    </span>
+                                {% endif %}
+                            </span>
+                        </div>
+                        <div class="dettagli">
+                            Quotazione: {{ c.quotazione }}M | 
+                            FM: {{ c.fantamedia }} | 
+                            Gol: {{ c.gol }} | 
+                            Assist: {{ c.assist }}
+                        </div>
+                        {% if c.suggerimento %}
+                        <div class="suggerimento">
+                            💡 {{ c.suggerimento }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p style="color:#666;padding:20px;text-align:center;">
+                        😕 Nessun consiglio disponibile per questa fase.<br>
+                        Hai già acquistato tutti i giocatori di questo ruolo?
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- Analisi strategica -->
+            <div class="analisi-side">
+                <h2>📈 Analisi strategica</h2>
+                
+                <div class="analisi-item">
+                    <span class="etichetta">🎯 Fase corrente</span>
+                    <span class="valore">{{ stats.fase_nome }}</span>
+                </div>
+                <div class="analisi-item">
+                    <span class="etichetta">🧤 Portieri acquistati</span>
+                    <span class="valore">{{ stats.portieri }}</span>
+                </div>
+                <div class="analisi-item">
+                    <span class="etichetta">🛡️ Difensori acquistati</span>
+                    <span class="valore">{{ stats.difensori }}</span>
+                </div>
+                <div class="analisi-item">
+                    <span class="etichetta">🎯 Centrocampisti acquistati</span>
+                    <span class="valore">{{ stats.centrocampisti }}</span>
+                </div>
+                <div class="analisi-item">
+                    <span class="etichetta">⚡ Attaccanti acquistati</span>
+                    <span class="valore">{{ stats.attaccanti }}</span>
+                </div>
+                
+                <div class="analisi-item" style="margin-top:15px;">
+                    <span class="etichetta">📊 Budget utilizzato</span>
+                    <div class="progress-bar">
+                        <div class="fill" data-width="{{ stats.percentuale_spesa }}"></div>
+                    </div>
+                    <span style="font-size:0.8em;color:#888;float:right;">
+                        {{ stats.percentuale_spesa }}%
+                    </span>
+                </div>
+                
+                <div class="analisi-item">
+                    <span class="etichetta">💡 Acquisti automatici</span>
+                    <span class="valore">{{ stats.portieri_automatici }}</span>
+                </div>
+
+                {% if stats.fase_corrente != 'A' %}
+                <form method="POST" action="/avanza_fase">
+                    <button type="submit" class="btn-avanza">
+                        ➡️ Passa a 
+                        {% if stats.fase_corrente == 'P' %}Difensori
+                        {% elif stats.fase_corrente == 'D' %}Centrocampisti
+                        {% elif stats.fase_corrente == 'C' %}Attaccanti
+                        {% endif %}
+                    </button>
+                </form>
+                {% else %}
+                <button class="btn-avanza" disabled>
+                    🏆 Asta completata!
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</body>
+</html>

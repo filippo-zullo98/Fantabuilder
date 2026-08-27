@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>📋 Strategia</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #1a1a2e; color: #eee; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { background: #16213e; padding: 20px; border-radius: 15px; margin-bottom: 30px; display: flex; justify-content: space-between; flex-wrap: wrap; }
+        .back { color: #aaa; text-decoration: none; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 25px; }
+        .card { background: #16213e; border-radius: 12px; padding: 20px; border: 1px solid #0f3460; }
+        .card h2 { color: #e94560; margin-bottom: 15px; }
+        .item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #0f3460; }
+        .riepilogo { background: #0a0a1a; padding: 20px; border-radius: 12px; margin-top: 30px; display: flex; flex-wrap: wrap; gap: 30px; justify-content: center; }
+        .riepilogo .valore { font-size: 2em; font-weight: bold; }
+        .positivo { color: #95d5b2; }
+        .negativo { color: #ef476f; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📋 Strategia Asta</h1>
+            <a href="/" class="back">⬅️ Torna</a>
+        </header>
+        <div style="text-align:center;margin-bottom:30px;">
+            <h3>Budget: {{ strategia.budget_per_ruolo.values()|sum }}</h3>
+        </div>
+        <div class="grid">
+            {% for ruolo, suggerimenti in strategia.suggerimenti.items() %}
+            <div class="card">
+                <h2>{% if ruolo == 'P' %}🧤{% elif ruolo == 'D' %}🛡️{% elif ruolo == 'C' %}🎯{% else %}⚡{% endif %} {{ ruolo }}</h2>
+                <div style="color:#95d5b2;">💰 Budget: {{ strategia.budget_per_ruolo[ruolo] }}</div>
+                {% for g in suggerimenti[:posti[ruolo]] %}
+                <div class="item"><span>{{ g.nome }}</span><span>{{ g.quotazione }} ({{ g.indice }})</span></div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+        <div class="riepilogo">
+            <div><div class="valore">{{ strategia.spesa_stimata }}</div><div style="color:#888;">💰 Spesa stimata</div></div>
+            <div><div class="valore {{ 'positivo' if strategia.budget_residuo >= 0 else 'negativo' }}">{{ strategia.budget_residuo }}</div><div style="color:#888;">📊 Residuo</div></div>
+        </div>
+    </div>
+</body>
+</html>
