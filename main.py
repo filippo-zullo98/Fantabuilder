@@ -59,6 +59,7 @@ class ConsigliAsta:
         self.acquistati: List[str] = []
         self.budget_rimasto: float = 500
         self.gestione_asta = None
+        self.giocatori_avversari: List[Giocatore] = []  # Lista dei giocatori acquistati dagli avversari
         
     def carica_da_csv(self, file_path: str) -> None:
         try:
@@ -91,15 +92,25 @@ class ConsigliAsta:
     def escludi_acquistati(self, giocatori: List[Giocatore]) -> List[Giocatore]:
         return [g for g in giocatori if g.nome not in self.acquistati]
     
-    def suggerisci(self, ruolo: Optional[str] = None, budget: Optional[float] = None, 
-                   escludi: List[str] = [], top_n: int = 10) -> List[Dict]:
+    def suggerisci(self, ruolo: Optional[str] = None, budget: Optional[float] = None,
+                escludi: List[str] = [], top_n: int = 10) -> List[Dict]:
+        # 1. Filtra per ruolo
         candidati = self.filtra_ruolo(ruolo)
-        if escludi:
-            candidati = [g for g in candidati if g.nome not in escludi]
-        candidati = self.escludi_acquistati(candidati)
-        if budget:
+        
+        # 2. Crea la lista completa di giocatori da escludere (tuoi + avversari + escludi passati)
+        escludi_completa = set(self.acquistati + self.giocatori_avversari + escludi)
+        
+        # 3. Escludi tutti i giocatori nella lista
+        candidati = [g for g in candidati if g.nome not in escludi_completa]
+        
+        # 4. Filtra per budget
+        if budget is not None:
             candidati = [g for g in candidati if g.quotazione <= budget]
+        
+        # 5. Ordina per indice decrescente
         candidati.sort(key=lambda x: x.calcola_indice(), reverse=True)
+        
+        # 6. Restituisci i top N
         return [g.to_dict() for g in candidati[:top_n]]
     
     def suggerisci_per_ruolo(self, budget: float) -> Dict[str, List[Dict]]:
@@ -148,6 +159,26 @@ class ConsigliAsta:
         self.gestione_asta = GestioneAsta(self.budget_rimasto)
         self.gestione_asta.tool = self
         return self.gestione_asta
+
+    def segna_avversario(self, nome_giocatore: str) -> None:
+        """Segna un giocatore come preso dagli avversari"""
+        if nome_giocatore not in self.giocatori_avversari:
+            self.giocatori_avversari.append(nome_giocatore)
+            print(f"🔴 Segnato avversario: {nome_giocatore}")
+
+    def rimuovi_avversario(self, nome_giocatore: str) -> None:
+        """Rimuove un giocatore dalla lista degli avversari (in caso di errore)"""
+        if nome_giocatore in self.giocatori_avversari:
+            self.giocatori_avversari.remove(nome_giocatore)
+
+    def get_stato_giocatore(self, nome: str) -> str:
+        """Restituisce lo stato di un giocatore: 'tuo', 'avversario', 'disponibile'"""
+        if nome in self.acquistati:
+            return 'tuo'
+        elif nome in self.giocatori_avversari:
+            return 'avversario'
+        else:
+            return 'disponibile'
 
 class GestioneAsta:
     def __init__(self, budget_totale=500):

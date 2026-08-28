@@ -142,6 +142,62 @@ def avanza_fase():
         gestione_asta.avanza_fase()
     return redirect('/dashboard')
 
+@app.route('/listone')
+def listone():
+    # Prepara tutti i giocatori con il loro stato
+    giocatori = []
+    for g in consigli_engine.giocatori:
+        stato = consigli_engine.get_stato_giocatore(g.nome)
+        giocatori.append({
+            'nome': g.nome,
+            'ruolo': g.ruolo,
+            'squadra': g.squadra,
+            'quotazione': g.quotazione,
+            'fantamedia': g.fantamedia,
+            'gol': g.gol,
+            'assist': g.assist,
+            'indice': g.calcola_indice(),
+            'stato': stato
+        })
+    
+    # Ordina per indice decrescente
+    giocatori.sort(key=lambda x: x['indice'], reverse=True)
+    
+    # Trova il miglior giocatore disponibile
+    suggerimento_top = None
+    for g in giocatori:
+        if g['stato'] == 'disponibile':
+            suggerimento_top = g
+            break
+    
+    # Statistiche
+    stats = {
+        'totale': len(giocatori),
+        'disponibili': len([g for g in giocatori if g['stato'] == 'disponibile']),
+        'tuoi': len([g for g in giocatori if g['stato'] == 'tuo']),
+        'avversari': len([g for g in giocatori if g['stato'] == 'avversario']),
+        'budget_residuo': consigli_engine.budget_rimasto
+    }
+    
+    return render_template('listone.html', 
+                         giocatori=giocatori, 
+                         stats=stats,
+                         suggerimento_top=suggerimento_top)
+
+@app.route('/segna_avversario', methods=['POST'])
+def segna_avversario():
+    nome = request.form.get('nome')
+    if nome:
+        consigli_engine.segna_avversario(nome)
+    return redirect('/listone')
+
+@app.route('/rimuovi_avversario', methods=['POST'])
+def rimuovi_avversario():
+    nome = request.form.get('nome')
+    if nome:
+        consigli_engine.rimuovi_avversario(nome)
+    return redirect('/listone')
+
 @app.route('/reset_asta')
 def reset_asta():
     global gestione_asta
