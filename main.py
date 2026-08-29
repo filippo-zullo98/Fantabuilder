@@ -1,5 +1,7 @@
 # main.py - Motore di consigli per asta fantacalcio
 import csv
+import json
+import os
 from typing import List, Dict, Optional
 
 class Giocatore:
@@ -60,7 +62,33 @@ class ConsigliAsta:
         self.budget_rimasto: float = 500
         self.gestione_asta = None
         self.giocatori_avversari: List[Giocatore] = []  # Lista dei giocatori acquistati dagli avversari
-        
+        self.stato_file = 'stato_asta.json'
+        self.carica_stato()
+
+    def carica_stato(self):
+        """Carica los stato dell'asta da file"""
+        if os.path.exists(self.stato_file):
+            try:
+                with open(self.stato_file):
+                    data = json.load(f)
+                    self.acquistati = data.get('acquistati', [])
+                    self.giocatori_avversari = data.get('giocatori_avversari', [])
+                    self.budget_rimasto = data.get('budget_rimasto', 500)
+                    print(f"✅ Stato dell'asta caricato da {self.stato_file}")
+            except:
+                print(f"❌ Errore nel caricamento dello stato")
+
+    def salva_stato(self):
+        """Salva lo stato dell'asta su file"""
+        data = {
+            'acquistati': self.acquistati,
+            'giocatori_avversari': self.giocatori_avversari,
+            'budget_rimasto': self.budget_rimasto
+        }
+
+        with open(self.stato_file, 'w') as f:
+            json.dump(data, f, indent=2)
+
     def carica_da_csv(self, file_path: str) -> None:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:

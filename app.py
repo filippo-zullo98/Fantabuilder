@@ -249,3 +249,29 @@ def esporta_squadra():
     return Response(testo, mimetype='text/plain', headers={
         'Content-Disposition': 'attachment;filename=squadra_fantacalcio.txt'
     })
+
+@app.route('/esporta_squadra')
+def esporta_squadra():
+    if not consigli_engine.acquistati:
+        flash('❌ Nessun acquisto da esportare!', 'error')
+        return redirect('/dashboard')
+    
+    testo = "🏆 SQUADRA FANTACALCIO\n"
+    testo += "="*40 + "\n\n"
+    
+    for ruolo in ['P', 'D', 'C', 'A']:
+        mappa = {'P':'🧤 Portieri','D':'🛡️ Difensori','C':'🎯 Centrocampisti','A':'⚡ Attaccanti'}
+        testo += f"{mappa.get(ruolo, ruolo)}:\n"
+        for a in consigli_engine.acquistati:
+            if a['ruolo'] == ruolo:
+                testo += f"  - {a['nome']} ({a['squadra']}) - {a['costo']}M\n"
+        testo += "\n"
+    
+    testo += f"💰 Budget totale: 500M\n"
+    testo += f"💰 Budget residuo: {consigli_engine.budget_rimasto}M\n"
+    testo += f"💸 Speso: {500 - consigli_engine.budget_rimasto}M\n"
+    
+    from flask import Response
+    return Response(testo, mimetype='text/plain', headers={
+        'Content-Disposition': 'attachment;filename=squadra.txt'
+    })

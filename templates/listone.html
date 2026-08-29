@@ -229,6 +229,31 @@
             .tabella-scroll th, .tabella-scroll td { padding: 6px 8px; }
             header { flex-direction: column; gap: 10px; text-align: center; }
         }
+
+        /* Ordinamento colonne */
+        th.sortable {
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+        }
+        th.sortable:hover {
+            background: rgba(255,215,0,0.1);
+        }
+        th.sortable .arrow {
+            margin-left: 5px;
+            font-size: 0.7em;
+            opacity: 0.5;
+        }
+        th.sortable.active .arrow {
+            opacity: 1;
+        }
+        th.sortable.asc .arrow::after {
+            content: " ▲";
+        }
+        th.sortable.desc .arrow::after {
+            content: " ▼";
+        }
+
     </style>
 </head>
 <body>
@@ -286,15 +311,15 @@
             <table id="tabellaGiocatori">
                 <thead>
                     <tr>
-                        <th>#</th>
-                        <th>Giocatore</th>
-                        <th>Ruolo</th>
-                        <th>Squadra</th>
-                        <th>Quot.</th>
-                        <th>FM</th>
-                        <th>G</th>
-                        <th>A</th>
-                        <th>Indice</th>
+                        <th class="sortable" data-col="index">#</th>
+                        <th class="sortable" data-col="nome">Giocatore</th>
+                        <th class="sortable" data-col="ruolo">Ruolo</th>
+                        <th class="sortable" data-col="squadra">Squadra</th>
+                        <th class="sortable" data-col="quotazione">Quot.</th>
+                        <th class="sortable" data-col="fantamedia">FM</th>
+                        <th class="sortable" data-col="gol">G</th>
+                        <th class="sortable" data-col="assist">A</th>
+                        <th class="sortable" data-col="indice">Indice</th>
                         <th>Stato</th>
                         <th>Azioni</th>
                     </tr>
@@ -377,8 +402,121 @@
             filtraTabella();
         }
         
+        // ===== ORDINAMENTO TABELLA =====
         document.addEventListener('DOMContentLoaded', function() {
-            document.getElementById('filtroNome').addEventListener('input', filtraTabella);
+            const table = document.getElementById('tabellaGiocatori');
+            const headers = table.querySelectorAll('th.sortable');
+            let sortState = {};
+
+            headers.forEach((header, index) => {
+                header.addEventListener('click', function() {
+                    const col = this.dataset.col;
+                    const currentSort = sortState[col] || 'none';
+                    
+                    // Determina il nuovo ordinamento
+                    let newSort;
+                    if (currentSort === 'none') newSort = 'asc';
+                    else if (currentSort === 'asc') newSort = 'desc';
+                    else newSort = 'none';
+                    
+                    // Resetta tutti gli header
+                    headers.forEach(h => {
+                        h.classList.remove('active', 'asc', 'desc');
+                    });
+                    
+                    // Se il nuovo ordinamento è 'none', non fare nulla
+                    if (newSort === 'none') {
+                        sortState[col] = 'none';
+                        // Ripristina l'ordine originale (per indice)
+                        sortTableByIndex(table);
+                        return;
+                    }
+                    
+                    // Applica la classe all'header corrente
+                    this.classList.add('active', newSort);
+                    sortState[col] = newSort;
+                    
+                    // Ordina la tabella
+                    sortTable(table, col, newSort);
+                });
+            });
+            
+            function sortTable(table, col, order) {
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                // Determina il tipo di dato
+                const firstRow = rows[0];
+                const cell = firstRow.querySelector(`td:nth-child(${getColIndex(table, col)})`);
+                let dataType = 'string';
+                if (cell) {
+                    const text = cell.textContent.trim();
+                    if (!isNaN(parseFloat(text)) && isFinite(text)) {
+                        dataType = 'number';
+                    }
+                }
+                
+                rows.sort((a, b) => {
+                    const aCell = a.querySelector(`td:nth-child(${getColIndex(table, col)})`);
+                    const bCell = b.querySelector(`td:nth-child(${getColIndex(table, col)})`);
+                    
+                    let aVal = aCell ? aCell.textContent.trim() : '';
+                    let bVal = bCell ? bCell.textContent.trim() : '';
+                    
+                    if (dataType === 'number') {
+                        aVal = parseFloat(aVal) || 0;
+                        bVal = parseFloat(bVal) || 0;
+                        return order === 'asc' ? aVal - bVal : bVal - aVal;
+                    } else {
+                        aVal = aVal.toLowerCase();
+                        bVal = bVal.toLowerCase();
+                        if (order === 'asc') {
+                            return aVal.localeCompare(bVal);
+                        } else {
+                            return bVal.localeCompare(aVal);
+                        }
+                    }
+                });
+                
+                // Riordina le righe nel DOM
+                rows.forEach(row => tbody.appendChild(row));
+                
+                // Aggiorna i numeri di riga
+                updateRowNumbers(table);
+            }
+            
+            function sortTableByIndex(table) {
+                const tbody = table.querySelector('tbody');
+                const rows = Array.from(tbody.querySelectorAll('tr'));
+                
+                rows.sort((a, b) => {
+                    const aIndex = parseInt(a.querySelector('td:first-child').textContent) || 0;
+                    const bIndex = parseInt(b.querySelector('td:first-child').textContent) || 0;
+                    return aIndex - bIndex;
+                });
+                
+                rows.forEach(row => tbody.appendChild(row));
+            }
+            
+            function getColIndex(table, col) {
+                const headers = table.querySelectorAll('th');
+                for (let i = 0; i < headers.length; i++) {
+                    if (headers[i].dataset.col === col) {
+                        return i + 1; // +1 perché le colonne partono da 1
+                    }
+                }
+                return 1;
+            }
+            
+            function updateRowNumbers(table) {
+                const rows = table.querySelectorAll('tbody tr');
+                rows.forEach((row, index) => {
+                    const firstCell = row.querySelector('td:first-child');
+                    if (firstCell) {
+                        firstCell.textContent = index + 1;
+                    }
+                });
+            }
         });
     </script>
 </body>
