@@ -86,6 +86,32 @@ def rimuovi_acquistato():
     flash('❌ Errore: giocatore non trovato', 'error')
     return redirect('/dashboard')
 
+@app.route('/acquista_da_listone', methods=['POST'])
+def acquista_da_listone():
+    global gestione_asta
+    nome = request.form.get('nome')
+    ruolo = request.form.get('ruolo')
+    squadra = request.form.get('squadra')
+    quotazione_base = float(request.form.get('quotazione_base', 0))
+    prezzo_pagato = float(request.form.get('prezzo_pagato', quotazione_base))
+    
+    if nome and gestione_asta:
+        # Verifica se il ruolo ha ancora posti disponibili
+        if gestione_asta.puoi_acquistare(ruolo):
+            risultato = gestione_asta.aggiungi_acquisto(
+                nome=nome,
+                ruolo=ruolo,
+                squadra=squadra,
+                costo=prezzo_pagato,
+                quotazione_base=quotazione_base,
+                automatico=False
+            )
+            flash(risultato.get('message', '✅ Acquisto effettuato!'), 'success')
+        else:
+            flash(f'❌ Ruolo {ruolo} completo! Hai già {gestione_asta.get_acquistati_per_ruolo(ruolo)}/{gestione_asta.get_limiti_ruolo().get(ruolo)} giocatori.', 'error')
+    
+    return redirect('/dashboard')
+
 @app.route('/reset')
 def reset():
     consigli_engine.resetta()
@@ -101,16 +127,41 @@ def dashboard():
     if gestione_asta is None:
         gestione_asta = consigli_engine.init_gestione()
     
-    # Aggiorna i consigli per la fase corrente
+    # Prepara tutti i giocatori con il loro stato
+    giocatori = []
+    for g in consigli_engine.giocatori:
+        stato = consigli_engine.get_stato_giocatore(g.nome)
+        giocatori.append({
+            'nome': g.nome,
+            'ruolo': g.ruolo,
+            'squadra': g.squadra,
+            'quotazione': g.quotazione,
+            'fantamedia': g.fantamedia,
+            'gol': g.gol,
+            'assist': g.assist,
+            'indice': g.calcola_indice(),
+            'stato': stato
+        })
+    
+    # Ordina per indice decrescente
+    giocatori.sort(key=lambda x: x['indice'], reverse=True)
+    
+    # Consigli per la fase corrente
     consigli = gestione_asta.get_consigli_fase()
     stats = gestione_asta.get_statistiche()
     
-    return render_template('dashboard.html',
+    # Aggiungi statistiche per il listone
+    stats['disponibili'] = len([g for g in giocatori if g['stato'] == 'disponibile'])
+    stats['tuoi'] = len([g for g in giocatori if g['stato'] == 'tuo'])
+    stats['avversari'] = len([g for g in giocatori if g['stato'] == 'avversario'])
+    
+    return render_template('dashboard_unificata.html',
                          stats=stats,
                          acquisti=gestione_asta.acquisti,
-                         consigli=consigli)
-
+                         consigli=consigli,
+                         giocatori=giocatori)
 @app.route('/acquista_asta', methods=['POST'])
+
 def acquista_asta():
     global gestione_asta
     nome = request.form.get('nome')
@@ -141,62 +192,6 @@ def avanza_fase():
     if gestione_asta:
         gestione_asta.avanza_fase()
     return redirect('/dashboard')
-
-@app.route('/listone')
-def listone():
-    # Prepara tutti i giocatori con il loro stato
-    giocatori = []
-    for g in consigli_engine.giocatori:
-        stato = consigli_engine.get_stato_giocatore(g.nome)
-        giocatori.append({
-            'nome': g.nome,
-            'ruolo': g.ruolo,
-            'squadra': g.squadra,
-            'quotazione': g.quotazione,
-            'fantamedia': g.fantamedia,
-            'gol': g.gol,
-            'assist': g.assist,
-            'indice': g.calcola_indice(),
-            'stato': stato
-        })
-    
-    # Ordina per indice decrescente
-    giocatori.sort(key=lambda x: x['indice'], reverse=True)
-    
-    # Trova il miglior giocatore disponibile
-    suggerimento_top = None
-    for g in giocatori:
-        if g['stato'] == 'disponibile':
-            suggerimento_top = g
-            break
-    
-    # Statistiche
-    stats = {
-        'totale': len(giocatori),
-        'disponibili': len([g for g in giocatori if g['stato'] == 'disponibile']),
-        'tuoi': len([g for g in giocatori if g['stato'] == 'tuo']),
-        'avversari': len([g for g in giocatori if g['stato'] == 'avversario']),
-        'budget_residuo': consigli_engine.budget_rimasto
-    }
-    
-    return render_template('listone.html', 
-                         giocatori=giocatori, 
-                         stats=stats,
-                         suggerimento_top=suggerimento_top)
-
-@app.route('/segna_avversario', methods=['POST'])
-def segna_avversario():
-    nome = request.form.get('nome')
-    if nome:
-        consigli_engine.segna_avversario(nome)
-    return redirect('/listone')
-
-@app.route('/rimuovi_avversario', methods=['POST'])
-def rimuovi_avversario():
-    nome = request.form.get('nome')
-    if nome:
-        consigli_engine.rimuovi_avversario(nome)
-    return redirect('/listone')
 
 @app.route('/reset_asta')
 def reset_asta():

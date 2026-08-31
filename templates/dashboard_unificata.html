@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Dashboard Asta</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', sans-serif; 
+            background: #0d1b2a; 
+            color: #eee; 
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container { max-width: 1600px; margin: 0 auto; }
+        
+        /* Header */
+        header { 
+            background: linear-gradient(135deg, #1b263b, #0d1b2a);
+            padding: 20px 30px;
+            border-radius: 15px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        header h1 { font-size: 2em; }
+        header h1 span { color: #e94560; }
+        .back { 
+            color: #e94560; 
+            text-decoration: none; 
+            font-weight: bold;
+            padding: 10px 20px;
+            border: 2px solid #e94560;
+            border-radius: 25px;
+            transition: all 0.3s;
+            display: inline-block;
+            margin-left: 10px;
+        }
+        .back:hover { background: #e94560; color: #fff; }
+        
+        /* Statistiche in tempo reale */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .stat-card .numero {
+            font-size: 2em;
+            font-weight: bold;
+            color: #ffd700;
+        }
+        .stat-card .label {
+            color: #aaa;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+        .stat-card.fase {
+            border-color: #e94560;
+        }
+        .stat-card.fase .numero {
+            color: #e94560;
+            font-size: 1.5em;
+        }
+        
+        /* Flash Messages */
+        .flash-message {
+            padding: 15px 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .flash-success {
+            background: rgba(45, 106, 79, 0.2);
+            border-left: 4px solid #2d6a4f;
+            color: #95d5b2;
+        }
+        .flash-error {
+            background: rgba(239, 71, 111, 0.15);
+            border-left: 4px solid #ef476f;
+            color: #ffb3b3;
+        }
+        
+        /* Badge ruoli */
+        .ruolo-badge { 
+            display: inline-block; 
+            padding: 2px 12px; 
+            border-radius: 20px; 
+            font-weight: bold; 
+            font-size: 0.8em;
+        }
+        .ruolo-P { background: #2d6a4f; color: #95d5b2; }
+        .ruolo-D { background: #1e6091; color: #82c0f0; }
+        .ruolo-C { background: #7b2d8b; color: #d9a5e0; }
+        .ruolo-A { background: #c92a2a; color: #ffb3b3; }
+        
+        /* Badge stato */
+        .stato-label {
+            font-size: 0.8em;
+            padding: 2px 10px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+        .stato-label.tuo { background: rgba(255,215,0,0.2); color: #ffd700; }
+        .stato-label.avversario { background: rgba(239,71,111,0.2); color: #ef476f; }
+        .stato-label.disponibile { background: rgba(45,106,79,0.2); color: #95d5b2; }
+        
+        /* Consigli */
+        .consigli-section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 25px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .consigli-section h2 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        .consiglio-card {
+            background: rgba(255,255,255,0.05);
+            padding: 12px 18px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #e94560;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        .consiglio-card:hover {
+            background: rgba(255,255,255,0.08);
+            transform: translateX(5px);
+        }
+        .consiglio-card .info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .consiglio-card .info .nome {
+            font-weight: bold;
+            font-size: 1.05em;
+        }
+        .consiglio-card .info .dettagli {
+            color: #aaa;
+            font-size: 0.85em;
+        }
+        .consiglio-card .info .indice {
+            color: #ffd700;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .consiglio-card .actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .consiglio-card .actions input[type="number"] {
+            width: 70px;
+            padding: 4px 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.2);
+            background: #0a0a1a;
+            color: #fff;
+            font-size: 0.8em;
+        }
+        .btn-acquista {
+            background: #2d6a4f;
+            border: none;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: all 0.3s;
+        }
+        .btn-acquista:hover { transform: scale(1.05); }
+        .btn-acquista:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        /* Listone */
+        .listone-section {
+            background: rgba(255,255,255,0.03);
+            border-radius: 15px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .listone-section h2 {
+            color: #ffd700;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+        
+        /* Filtri listone */
+        .filtri-rapidi {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .filtri-rapidi input, 
+        .filtri-rapidi select {
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(0,0,0,0.3);
+            color: #eee;
+            font-size: 0.9em;
+        }
+        .filtri-rapidi input::placeholder { color: #666; }
+        .filtri-rapidi select option { background: #1a1a2e; }
+        .filtri-rapidi button {
+            padding: 8px 18px;
+            background: #e94560;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.9em;
+        }
+        .filtri-rapidi button:hover { background: #c73652; transform: scale(1.02); }
+        .filtri-rapidi .btn-reset {
+            background: #0f3460;
+        }
+        .filtri-rapidi .btn-reset:hover { background: #1a4a7a; }
+        
+        /* Tabella scrollabile */
+        .tabella-scroll {
+            max-height: 50vh;
+            overflow-y: auto;
+            border-radius: 10px;
+        }
+        .tabella-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .tabella-scroll::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+        }
+        .tabella-scroll::-webkit-scrollbar-thumb {
+            background: #e94560;
+            border-radius: 10px;
+        }
+        .tabella-scroll table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+        }
+        .tabella-scroll th {
+            position: sticky;
+            top: 0;
+            background: #1b263b;
+            padding: 10px 10px;
+            text-align: left;
+            font-weight: bold;
+            color: #ffd700;
+            font-size: 0.75em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e94560;
+            z-index: 10;
+            cursor: pointer;
+            user-select: none;
+        }
+        .tabella-scroll th:hover {
+            background: rgba(255,215,0,0.1);
+        }
+        .tabella-scroll th .arrow {
+            margin-left: 5px;
+            font-size: 0.7em;
+            opacity: 0.5;
+        }
+        .tabella-scroll th.active .arrow { opacity: 1; }
+        .tabella-scroll th.asc .arrow::after { content: " ▲"; }
+        .tabella-scroll th.desc .arrow::after { content: " ▼"; }
+        .tabella-scroll td {
+            padding: 8px 10px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .tabella-scroll tr:hover {
+            background: rgba(255,255,255,0.03);
+        }
+        .tabella-scroll .indice {
+            color: #ffd700;
+            font-weight: bold;
+        }
+        .tr-tuo { background: rgba(255,215,0,0.05); }
+        .tr-avversario { background: rgba(239,71,111,0.05); opacity: 0.7; }
+        .tr-tuo td:first-child { border-left: 3px solid #ffd700; }
+        .tr-avversario td:first-child { border-left: 3px solid #ef476f; }
+        
+        .btn-avversario {
+            background: #c92a2a;
+            border: none;
+            color: white;
+            padding: 3px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.7em;
+            transition: all 0.3s;
+        }
+        .btn-avversario:hover { background: #a01e1e; transform: scale(1.05); }
+        .btn-ripristina {
+            background: #0f3460;
+            border: none;
+            color: white;
+            padding: 3px 12px;
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.7em;
+            transition: all 0.3s;
+        }
+        .btn-ripristina:hover { background: #1a4a7a; transform: scale(1.05); }
+        
+        .btn-avanza {
+            padding: 10px 25px;
+            background: #e94560;
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+            width: 100%;
+        }
+        .btn-avanza:hover { background: #c73652; transform: scale(1.02); }
+        .btn-avanza:disabled { opacity: 0.5; cursor: not-allowed; }
+        
+        @media (max-width: 768px) {
+            .filtri-rapidi { flex-direction: column; }
+            .filtri-rapidi input, .filtri-rapidi select { min-width: 100%; }
+            .tabella-scroll { font-size: 0.75em; }
+            .tabella-scroll th, .tabella-scroll td { padding: 4px 6px; }
+            .consiglio-card { flex-direction: column; align-items: stretch; gap: 8px; }
+            header { flex-direction: column; gap: 10px; text-align: center; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash-message flash-{{ category }}">
+                        {{ message|safe }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <header>
+            <h1>📊 <span>Dashboard</span> Asta</h1>
+            <div>
+                <a href="/" class="back">⬅️ Torna</a>
+                <a href="/reset_asta" class="back" style="margin-left:10px;" onclick="return confirm('Sei sicuro di voler resettare tutti gli acquisti?');">↺ Reset</a>
+            </div>
+        </header>
+
+        <!-- Statistiche -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="numero">{{ stats.budget_residuo }}</div>
+                <div class="label">💰 Budget residuo</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">{{ stats.speso }}</div>
+                <div class="label">💸 Speso</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">{{ stats.totale_acquisti }}</div>
+                <div class="label">✅ Acquisti</div>
+            </div>
+            <div class="stat-card fase">
+                <div class="numero">{{ stats.fase_nome }}</div>
+                <div class="label">📌 Fase corrente</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">🧤 {{ stats.limiti.P.attuali }}/{{ stats.limiti.P.limite }}</div>
+                <div class="label">Portieri</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">🛡️ {{ stats.limiti.D.attuali }}/{{ stats.limiti.D.limite }}</div>
+                <div class="label">Difensori</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">🎯 {{ stats.limiti.C.attuali }}/{{ stats.limiti.C.limite }}</div>
+                <div class="label">Centrocampisti</div>
+            </div>
+            <div class="stat-card">
+                <div class="numero">⚡ {{ stats.limiti.A.attuali }}/{{ stats.limiti.A.limite }}</div>
+                <div class="label">Attaccanti</div>
+            </div>
+        </div>
+
+        <!-- Consigli -->
+        <div class="consigli-section">
+            <h2>🎯 Consigli per la fase {{ stats.fase_nome }}</h2>
+            {% if consigli %}
+                {% for c in consigli %}
+                <div class="consiglio-card">
+                    <div class="info">
+                        <span class="nome">
+                            {% if c.ruolo == 'P' %}🧤
+                            {% elif c.ruolo == 'D' %}🛡️
+                            {% elif c.ruolo == 'C' %}🎯
+                            {% else %}⚡{% endif %}
+                            {{ c.nome }}
+                            <span style="color:#888;font-weight:normal;font-size:0.85em;">({{ c.squadra }})</span>
+                        </span>
+                        <span class="dettagli">
+                            Base: {{ c.quotazione }}M | FM: {{ c.fantamedia }} | G: {{ c.gol }} | A: {{ c.assist }}
+                        </span>
+                        <span class="indice">Indice: {{ c.indice }}</span>
+                    </div>
+                    <div class="actions">
+                        {% if stats.limiti[c.ruolo].rimanenti > 0 %}
+                            <form method="POST" action="/acquista_asta" style="display:inline-flex;align-items:center;gap:5px;">
+                                <input type="hidden" name="nome" value="{{ c.nome }}">
+                                <input type="hidden" name="ruolo" value="{{ c.ruolo }}">
+                                <input type="hidden" name="squadra" value="{{ c.squadra }}">
+                                <input type="hidden" name="quotazione_base" value="{{ c.quotazione }}">
+                                <input type="number" name="prezzo_pagato" value="{{ c.quotazione }}" step="0.5" min="0">
+                                <button type="submit" class="btn-acquista">✅ Prendo</button>
+                            </form>
+                        {% else %}
+                            <span style="color:#ef476f;font-size:0.8em;">❌ Ruolo completo</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color:#666;text-align:center;padding:20px;">
+                    😕 Nessun consiglio disponibile per questa fase.
+                </p>
+            {% endif %}
+        </div>
+
+        <!-- Listone completo -->
+        <div class="listone-section">
+            <h2>📋 Listone completo <span style="font-size:0.7em;color:#888;">
+                ({{ stats.disponibili }} disponibili / {{ stats.tuoi }} tuoi / {{ stats.avversari }} avversari)
+            </span></h2>
+            
+            <!-- Filtri -->
+            <div class="filtri-rapidi">
+                <input type="text" id="filtroNome" placeholder="🔍 Cerca giocatore..." onkeyup="filtraTabella()">
+                <select id="filtroRuolo" onchange="filtraTabella()">
+                    <option value="tutti">📌 Tutti</option>
+                    <option value="P">🧤 Portieri</option>
+                    <option value="D">🛡️ Difensori</option>
+                    <option value="C">🎯 Centrocampisti</option>
+                    <option value="A">⚡ Attaccanti</option>
+                </select>
+                <select id="filtroStato" onchange="filtraTabella()">
+                    <option value="tutti">📊 Tutti</option>
+                    <option value="disponibile">⬜ Disponibili</option>
+                    <option value="tuo">✅ Tuoi</option>
+                    <option value="avversario">❌ Avversari</option>
+                </select>
+                <input type="number" id="filtroBudget" placeholder="💰 Budget max" step="0.5" onchange="filtraTabella()">
+                <button onclick="filtraTabella()">🔍 Cerca</button>
+                <button class="btn-reset" onclick="resetFiltri()">↺ Reset</button>
+            </div>
+
+            <!-- Tabella -->
+            <div class="tabella-scroll" id="tabellaContainer">
+                <table id="tabellaGiocatori">
+                    <thead>
+                        <tr>
+                            <th class="sortable" data-col="index">#</th>
+                            <th class="sortable" data-col="nome">Giocatore</th>
+                            <th class="sortable" data-col="ruolo">Ruolo</th>
+                            <th class="sortable" data-col="squadra">Squadra</th>
+                            <th class="sortable" data-col="quotazione">Quot.</th>
+                            <th class="sortable" data-col="fantamedia">FM</th>
+                            <th class="sortable" data-col="gol">G</th>
+                            <th class="sortable" data-col="assist">A</th>
+                            <th class="sortable" data-col="indice">Indice</th>
+                            <th>Stato</th>
+                            <th>Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for g in giocatori %}
+                        <tr class="tr-{{ g.stato }}" data-nome="{{ g.nome }}" data-ruolo="{{ g.ruolo }}" data-squadra="{{ g.squadra }}" data-quotazione="{{ g.quotazione }}" data-stato="{{ g.stato }}">
+                            <td>{{ loop.index }}</td>
+                            <td><strong>{{ g.nome }}</strong></td>
+                            <td><span class="ruolo-badge ruolo-{{ g.ruolo }}">{{ g.ruolo }}</span></td>
+                            <td>{{ g.squadra }}</td>
+                            <td>{{ g.quotazione }}</td>
+                            <td>{{ g.fantamedia }}</td>
+                            <td>{{ g.gol }}</td>
+                            <td>{{ g.assist }}</td>
+                            <td><span class="indice">{{ g.indice }}</span></td>
+                            <td>
+                                <span class="stato-label {{ g.stato }}">
+                                    {% if g.stato == 'tuo' %}✅ Tuo
+                                    {% elif g.stato == 'avversario' %}❌ Avversario
+                                    {% else %}⬜ Disponibile
+                                    {% endif %}
+                                </span>
+                            </td>
+                           <td>
+    {% if g.stato == 'disponibile' %}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+            <form method="POST" action="/acquista_da_listone" style="display:inline-flex;align-items:center;gap:3px;">
+                <input type="hidden" name="nome" value="{{ g.nome }}">
+                <input type="hidden" name="ruolo" value="{{ g.ruolo }}">
+                <input type="hidden" name="squadra" value="{{ g.squadra }}">
+                <input type="hidden" name="quotazione_base" value="{{ g.quotazione }}">
+                <input type="number" name="prezzo_pagato" value="{{ g.quotazione }}" step="0.5" min="0" 
+                    style="width:60px;padding:2px 4px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#0a0a1a;color:#fff;font-size:0.75em;">
+                <button type="submit" class="btn-acquista" style="font-size:0.7em;padding:2px 10px;">✅</button>
+            </form>
+            <form method="POST" action="/segna_avversario" style="display:inline;">
+                <input type="hidden" name="nome" value="{{ g.nome }}">
+                <button type="submit" class="btn-avversario">❌</button>
+            </form>
+        </div>
+    {% elif g.stato == 'avversario' %}
+        <div style="display:flex;gap:4px;flex-wrap:wrap;align-items:center;">
+            <form method="POST" action="/rimuovi_avversario" style="display:inline;">
+                <input type="hidden" name="nome" value="{{ g.nome }}">
+                <button type="submit" class="btn-ripristina">↺ Ripristina</button>
+            </form>
+        </div>
+    {% else %}
+        <span style="color:#888;font-size:0.8em;">✔️ Acquistato</span>
+    {% endif %}
+</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Avanza fase -->
+        {% if stats.fase_corrente != 'A' %}
+        <form method="POST" action="/avanza_fase" style="margin-top:20px;">
+            <button type="submit" class="btn-avanza">
+                ➡️ Passa a 
+                {% if stats.fase_corrente == 'P' %}Difensori
+                {% elif stats.fase_corrente == 'D' %}Centrocampisti
+                {% elif stats.fase_corrente == 'C' %}Attaccanti
+                {% endif %}
+            </button>
+        </form>
+        {% else %}
+        <button class="btn-avanza" disabled style="margin-top:20px;">
+            🏆 Asta completata!
+        </button>
+        {% endif %}
+    </div>
+
+    <script>
+        // Filtri tabella
+        function filtraTabella() {
+            const nome = document.getElementById('filtroNome').value.toLowerCase();
+            const ruolo = document.getElementById('filtroRuolo').value;
+            const stato = document.getElementById('filtroStato').value;
+            const budget = parseFloat(document.getElementById('filtroBudget').value) || Infinity;
+            
+            const rows = document.querySelectorAll('#tabellaGiocatori tbody tr');
+            
+            rows.forEach(row => {
+                const rowNome = row.dataset.nome.toLowerCase();
+                const rowRuolo = row.dataset.ruolo;
+                const rowStato = row.dataset.stato;
+                const rowQuotazione = parseFloat(row.dataset.quotazione);
+                
+                let mostra = true;
+                
+                if (nome && !rowNome.includes(nome)) mostra = false;
+                if (ruolo !== 'tutti' && rowRuolo !== ruolo) mostra = false;
+                if (stato !== 'tutti' && rowStato !== stato) mostra = false;
+                if (rowQuotazione > budget) mostra = false;
+                
+                row.style.display = mostra ? '' : 'none';
+            });
+        }
+        
+        function resetFiltri() {
+            document.getElementById('filtroNome').value = '';
+            document.getElementById('filtroRuolo').value = 'tutti';
+            document.getElementById('filtroStato').value = 'tutti';
+            document.getElementById('filtroBudget').value = '';
+            filtraTabella();
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('filtroNome').addEventListener('input', filtraTabella);
+        });
+
+        // Ordinamento tabella
+        document.addEventListener('DOMContentLoaded', function() {
+            const table = document.getElementById('tabellaGiocatori');
+            const headers = table.querySelectorAll('th.sortable');
+            let sortState = {};
+
+            headers.forEach((header) => {
+                header.addEventListener('click', function() {
+                    const col = this.dataset.col;
+                    const currentSort = sortState[col] || 'none';
+                    
+                    let newSort;
+                    if (currentSort === 'none') newSort = 'asc';
+                    else if (currentSort === 'asc') newSort = 'desc';
+                    else newSort = 'none';
+                    
+                    headers.forEach(h => {
+                        h.classList.remove('active', 'asc', 'desc');
+                    });
+                    
+                    if (newSort === 'none') {
+                        sortState[col] = 'none';
+                        return;
+                    }
+                    
+                    this.classList.add('active', newSort);
+                    sortState[col] = newSort;
+                    
+                    const tbody = table.querySelector('tbody');
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    
+                    const colIndex = Array.from(headers).indexOf(this) + 1;
+                    const isNumeric = col === 'quotazione' || col === 'fantamedia' || col === 'gol' || col === 'assist' || col === 'indice' || col === 'index';
+                    
+                    rows.sort((a, b) => {
+                        const aVal = a.querySelector(`td:nth-child(${colIndex})`).textContent.trim();
+                        const bVal = b.querySelector(`td:nth-child(${colIndex})`).textContent.trim();
+                        
+                        if (isNumeric) {
+                            const aNum = parseFloat(aVal) || 0;
+                            const bNum = parseFloat(bVal) || 0;
+                            return newSort === 'asc' ? aNum - bNum : bNum - aNum;
+                        } else {
+                            const aStr = aVal.toLowerCase();
+                            const bStr = bVal.toLowerCase();
+                            return newSort === 'asc' ? aStr.localeCompare(bStr) : bStr.localeCompare(aStr);
+                        }
+                    });
+                    
+                    rows.forEach(row => tbody.appendChild(row));
+                    
+                    // Aggiorna numeri riga
+                    rows.forEach((row, index) => {
+                        row.querySelector('td:first-child').textContent = index + 1;
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>
